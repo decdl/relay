@@ -33,34 +33,34 @@ int main(int argc, char **argv)
 			if (str.empty())
 			{
 				size_t size = msg.size();
-				socket.send(asio::buffer(&size, sizeof(size_t)));
-				socket.send(asio::buffer(msg));
+				asio::write(socket, asio::buffer(&size, sizeof(size_t)));
+				asio::write(socket, asio::buffer(msg));
 				std::cout << "\e[0;32m";
 				while (size >= sizeof(buf) - 1)
 				{
-					socket.receive(asio::buffer(buf, sizeof(buf) - 1));
+					asio::read(socket, asio::buffer(buf, sizeof(buf) - 1));
 					size -= sizeof(buf) - 1;
 					std::cout << buf;
 				}
-				socket.receive(asio::buffer(buf, size));
+				asio::read(socket, asio::buffer(buf, size));
 				buf[size] = '\0';
 				std::cout << buf << std::endl << "\e[0;35m";
 				msg.clear();
 			}
 			else
-				msg += str + '\n';
+				msg += std::move(str) += '\n';
 		}
 		size_t size = msg.size();
-		socket.send(asio::buffer(&size, sizeof(size_t)));
-		socket.send(asio::buffer(msg));
+		asio::write(socket, asio::buffer(&size, sizeof(size_t)));
+		asio::write(socket, asio::buffer(msg));
 		std::cout << "\e[0;32m";
 		while (size >= sizeof(buf) - 1)
 		{
-			socket.receive(asio::buffer(buf, sizeof(buf) - 1));
+			asio::read(socket, asio::buffer(buf, sizeof(buf) - 1));
 			size -= sizeof(buf) - 1;
 			std::cout << buf;
 		}
-		socket.receive(asio::buffer(buf, size));
+		asio::read(socket, asio::buffer(buf, size));
 		buf[size] = '\0';
 		std::cout << buf << std::endl;
 	}

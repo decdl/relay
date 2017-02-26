@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 					response.push_back(buf[i]);
 					if (--remain == 0)
 					{
-						socket.send(asio::buffer(response));
+						asio::write(socket, asio::buffer(response));
 						response.clear();
 					}
 				}
@@ -68,6 +68,6 @@ int main(int argc, char **argv)
 		}
 	}
 	// finish the last segment
-	socket.send(asio::buffer(response));
+	asio::write(socket, asio::buffer(response));
 	return 0;
 }
