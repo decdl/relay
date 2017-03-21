@@ -12,11 +12,11 @@ namespace relay
 	const size_t size_client_sig = sizeof(client_sig);
 	const size_t size_server_sig = sizeof(server_sig);
 
-	void read_timeout(tcp::socket &socket, void *buffer, size_t size)
+	void read_timeout(tcp::socket &socket, void *buffer, size_t size, size_t milliseconds)
 	{
 		bool timeout = false;
 		asio::steady_timer timer(socket.get_io_service());
-		timer.expires_from_now(std::chrono::milliseconds(1500));
+		timer.expires_from_now(std::chrono::milliseconds(milliseconds));
 		timer.async_wait(
 				[&socket](const boost::system::error_code &ec)->void
 				{

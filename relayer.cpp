@@ -28,6 +28,7 @@ namespace relay
 		// check argument
 		if (buffer_size == 0)
 			throw std::invalid_argument("zero relay buffer size");
+		// start relay
 		std::shared_ptr<buffer_t> bufferA = std::make_shared<buffer_t>(buffer_size);
 		std::shared_ptr<buffer_t> bufferB = std::make_shared<buffer_t>(buffer_size);
 		socketA.async_read_some(asio::buffer(*bufferA, buffer_size),
@@ -50,10 +51,6 @@ namespace relay
 	{
 		return std::make_pair(bytesA, bytesB);
 	}
-
-	// access sockets
-	tcp::socket & relayer::get_A() noexcept {return socketA;}
-	tcp::socket & relayer::get_B() noexcept {return socketB;}
 
 	// async read handler
 	void relayer::handle_read(std::shared_ptr<buffer_t> buffer, bool from_A,

@@ -9,10 +9,8 @@ namespace relay
 	using ip::tcp;
 
 	// constructor
-	client::client(asio::io_service &ios, size_t size)
-		: socket_remote(ios), socket_local(ios),
-			remote_set(false), local_set(false),
-			buffer_size(size), relay(nullptr) {}
+	client::client(asio::io_service &io_service, size_t size)
+		: ios(io_service), remote_set(false), local_set(false), buffer_size(size) {}
 
 	// set remote endpoint
 	void client::set_remote(const tcp::endpoint &remote) noexcept
@@ -31,7 +29,7 @@ namespace relay
 	// statistics
 	std::pair<size_t, size_t> client::stat() const
 	{
-		if (relay == nullptr)
+		if (!relay)
 			throw std::runtime_error("no relayer object");
 		return relay->stat();
 	}
@@ -42,9 +40,11 @@ namespace relay
 		if (!remote_set || !local_set)
 			throw std::runtime_error("endpoints not set");
 
+		tcp::socket socket_remote(ios);
+		tcp::socket socket_local(ios);
+		buffer_t buffer(size_server_sig);
 		// establish remote connection
 		socket_remote.connect(endpoint_remote);
-		buffer_t buffer(size_server_sig);
 		try
 		{
 			asio::write(socket_remote, asio::buffer(client_sig, size_client_sig));
@@ -75,10 +75,9 @@ retry:
 				asio::write(socket_remote, asio::buffer(buffer, 1));
 				goto retry;
 			}
-			else if (e.code() == asio::error::eof)
+			if (e.code() == asio::error::eof)
 				throw std::runtime_error("remote server connection reset");
-			else
-				throw;
+			throw;
 		}
 		buffer[0] = 0;
 		asio::write(socket_remote, asio::buffer(buffer, 1));

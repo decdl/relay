@@ -17,7 +17,8 @@ void error(const std::string &str)
 inline int print_usage(char *name)
 {
 	std::cerr << "Usage: " << name << " -s <remote-port> <local-port>" << std::endl
-			  << "       " << name << " -c <remote-host> <remote-port> [<local-port>]" << std::endl;
+			  << "       " << name << " -c <remote-host> <remote-port> [<local-port>]" << std::endl
+			  << "      For -s, <remote-port> and <local-port> must be different" << std::endl;
 	return EXIT_SUCCESS;
 }
 
@@ -36,6 +37,8 @@ int main(int argc, char **argv)
 		client_instance = false;
 		if (argc != 4)
 			return print_usage(argv[0]);
+		if (std::strcmp(argv[2], argv[3]) == 0)
+			return print_usage(argv[0]);
 	}
 	else if (std::strcmp(argv[1], "-c") == 0)
 	{
@@ -50,11 +53,11 @@ int main(int argc, char **argv)
 	{
 		asio::io_service ios;
 		std::unique_ptr<relay::client> client;
-		std::unique_ptr<relay::client/**/> server;
+		std::unique_ptr<relay::server> server;
 		if (client_instance)
 			client = std::make_unique<relay::client>(ios);
 		else
-			server = std::make_unique<relay::client/**/>(ios);
+			server = std::make_unique<relay::server>(ios);
 		// resolve hosts
 		{
 			tcp::resolver resolver(ios);
@@ -76,15 +79,25 @@ int main(int argc, char **argv)
 			}
 			else					// server mode
 			{
-				// not implemented
-				throw std::runtime_error("server not implemented");
+				// resolve remote
+				{
+					tcp::resolver::query query(tcp::v4(), "localhost", argv[2]);
+					iterator it = resolver.resolve(query);
+					server->set_remote(*it);
+				}
+				// resolve local
+				{
+					tcp::resolver::query query(tcp::v4(), "localhost", argv[3]);
+					iterator it = resolver.resolve(query);
+					server->set_local(*it);
+				}
 			}
 		}
 		// start relay
 		if (client_instance)
 			client->connect();
 		else
-			throw std::runtime_error("server not implemented");
+			server->start();
 		ios.run();
 		// print statistics
 		std::pair<size_t, size_t> stat = client_instance ? client->stat() : server->stat();

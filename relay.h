@@ -18,7 +18,7 @@ namespace relay
 	extern const size_t size_server_sig;
 
 	// read data and throw eof if timeout
-	void read_timeout(tcp::socket &socket, void *buffer, size_t size);
+	void read_timeout(tcp::socket &socket, void *buffer, size_t size, size_t milliseconds = 1500);
 
 	// buffer type
 	class buffer_t

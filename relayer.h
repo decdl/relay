@@ -32,9 +32,6 @@ namespace relay
 			// statistics
 			std::pair<size_t, size_t> stat() const noexcept;
 
-			// access sockets
-			tcp::socket & get_A() noexcept;
-			tcp::socket & get_B() noexcept;
 		private:
 			size_t buffer_size;
 			bool shutdown_AB, shutdown_BA;

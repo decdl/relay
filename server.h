@@ -1,6 +1,6 @@
 
-#ifndef _RELAY_CLIENT_H_
-#define _RELAY_CLIENT_H_
+#ifndef _RELAY_SERVER_H_
+#define _RELAY_SERVER_H_
 
 #include <memory>
 
@@ -12,24 +12,24 @@ namespace relay
 	namespace ip = asio::ip;
 	using ip::tcp;
 
-	class client
+	class server
 	{
 		public:
 			// constructor
-			client(asio::io_service &io_service, size_t size = 8192);
-			client(const client &) = delete;
+			server(asio::io_service &io_service, size_t size = 8192);
+			server(const server &) = delete;
 
 			// copy assignment
-			void operator=(const client &) = delete;
+			void operator=(const server &) = delete;
 
-			// set remote endpoint
+			// set remote acceptor port
 			void set_remote(const tcp::endpoint &remote) noexcept;
 
-			// set local endpoint
+			// set local acceptor port
 			void set_local(const tcp::endpoint &local) noexcept;
 
-			// start connection
-			void connect();
+			// start listening
+			void start();
 
 			// statistics
 			std::pair<size_t, size_t> stat() const;

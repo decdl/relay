@@ -5,8 +5,8 @@ LDFLAGS = -lboost_system -lpthread $L
 
 all: relay
 
-relay: main.o relay.o relayer.o client.o #server.o
-	$(CC) $(LDFLAGS) main.o relay.o relayer.o client.o -o relay
+relay: main.o relay.o relayer.o client.o server.o
+	$(CC) $(LDFLAGS) main.o relay.o relayer.o client.o server.o -o relay
 
 main.o: main.cpp prec.h.gch
 	$(CC) $(CXXFLAGS) -c main.cpp
@@ -23,7 +23,7 @@ client.o: client.cpp prec.h.gch
 server.o: server.cpp prec.h.gch
 	$(CC) $(CXXFLAGS) -c server.cpp
 
-prec.h.gch: prec.h relay.h relayer.h client.h #server.h
+prec.h.gch: prec.h relay.h relayer.h client.h server.h
 	$(CC) $(CXXFLAGS) -c prec.h
 
 clean:

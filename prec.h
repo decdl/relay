@@ -18,7 +18,7 @@
 #include "relay.h"
 #include "relayer.h"
 #include "client.h"
-//#include "server.h"
+#include "server.h"
 
 #endif
 
