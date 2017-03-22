@@ -1,10 +1,17 @@
 
 #include "prec.h"
 
+#define CLOSE_ALL { \
+	if (socketA.is_open()) \
+		socketA.close(); \
+	if (socketB.is_open()) \
+		socketB.close(); \
+	return; \
+}
+
 namespace relay
 {
 	namespace asio = boost::asio;
-	namespace ip = asio::ip;
 	using ip::tcp;
 	using namespace std::placeholders;
 
@@ -19,7 +26,8 @@ namespace relay
 
 	// constructor
 	relayer::relayer(tcp::socket && A, tcp::socket && B, size_t size) : buffer_size(size),
-																		shutdown_AB(false), shutdown_BA(false),
+																		// 0 for normal, 1 for closing, 2 for closed
+																		shutdown_AB(0), shutdown_BA(0),
 																		socketA(std::forward<tcp::socket>(A)),
 																		socketB(std::forward<tcp::socket>(B)),
 																		writingA(false), writingB(false),
@@ -28,6 +36,8 @@ namespace relay
 		// check argument
 		if (buffer_size == 0)
 			throw std::invalid_argument("zero relay buffer size");
+		if (!socketA.is_open() || !socketB.is_open())
+			throw std::invalid_argument("sockets not open");
 		// start relay
 		std::shared_ptr<buffer_t> bufferA = std::make_shared<buffer_t>(buffer_size);
 		std::shared_ptr<buffer_t> bufferB = std::make_shared<buffer_t>(buffer_size);
@@ -59,26 +69,34 @@ namespace relay
 		// error checking
 		if (ec)
 		{
+			CLOSE_ALL
 			if (ec == asio::error::eof)
 			{
 				// handle eof
-				select(from_A, shutdown_AB, shutdown_BA) = true;
-				select(from_A, dataA, dataB).push(std::make_pair(buffer, bytes_transferred));
-				check_and_write();
+				select(from_A, shutdown_AB, shutdown_BA) = 1;
+				if (bytes_transferred != 0)
+				{
+					select(from_A, dataA, dataB).push(std::make_pair(buffer, bytes_transferred));
+					check_and_write();
+				}
 				return;
 			}
 			else
 				throw boost::system::system_error(ec);
 		}
-		if (select(from_A, shutdown_AB, shutdown_BA))
-			return;
 		// signal new data to write
-		select(from_A, dataA, dataB).push(std::make_pair(buffer, bytes_transferred));
-		check_and_write();
+		if (bytes_transferred != 0)
+		{
+			select(from_A, dataA, dataB).push(std::make_pair(buffer, bytes_transferred));
+			check_and_write();
+		}
 		// read new data
-		buffer = std::make_shared<buffer_t>(buffer_size);
-		select(from_A, socketA, socketB).async_read_some(asio::buffer(*buffer, bytes_transferred),
-				std::bind(&relayer::handle_read, this, buffer, from_A, _1, _2));
+		if (select(from_A, shutdown_AB, shutdown_BA) == 0)
+		{
+			buffer = std::make_shared<buffer_t>(buffer_size);
+			select(from_A, socketA, socketB).async_read_some(asio::buffer(*buffer, bytes_transferred),
+					std::bind(&relayer::handle_read, this, buffer, from_A, _1, _2));
+		}
 	}
 
 	// async write handler
@@ -88,10 +106,15 @@ namespace relay
 		// error checking
 		if (ec)
 		{
+			CLOSE_ALL
 			if (ec == asio::error::broken_pipe)
 			{
 				// handle broken pipe
-				select(to_A, shutdown_BA, shutdown_AB) = true;
+				if (select(to_A, shutdown_BA, shutdown_AB) != 2)
+				{
+					select(to_A, socketB, socketA).shutdown(tcp::socket::shutdown_receive);
+					select(to_A, shutdown_BA, shutdown_AB) = 2;
+				}
 				while (select(to_A, dataB, dataA).size() > 0)
 					select(to_A, dataB, dataA).pop();
 				return;
@@ -101,6 +124,7 @@ namespace relay
 		}
 		// unblock
 		select(to_A, writingA, writingB) = false;
+		select(to_A, bytesB, bytesA) += bytes_transferred;
 		// continue next write
 		check_and_write();
 	}
@@ -108,7 +132,7 @@ namespace relay
 	// check and write
 	void relayer::check_and_write()
 	{
-		if (!writingA)
+		if (!writingA && shutdown_BA != 2)
 		{
 			if (dataB.size() > 0)
 			{
@@ -118,10 +142,13 @@ namespace relay
 				asio::async_write(socketA, asio::buffer(*buffer.first, buffer.second),
 						std::bind(&relayer::handle_write, this, buffer.first, true, _1, _2));
 			}
-			else if (shutdown_BA)
-				socketA.shutdown(decltype(socketA)::shutdown_send);
+			else if (shutdown_BA == 1)
+			{
+				socketA.shutdown(tcp::socket::shutdown_send);
+				shutdown_BA = 2;
+			}
 		}
-		if (!writingB)
+		if (!writingB && shutdown_AB != 2)
 		{
 			if (dataA.size() > 0)
 			{
@@ -131,8 +158,11 @@ namespace relay
 				asio::async_write(socketB, asio::buffer(*buffer.first, buffer.second),
 						std::bind(&relayer::handle_write, this, buffer.first, false, _1, _2));
 			}
-			else if (shutdown_AB)
-				socketB.shutdown(decltype(socketB)::shutdown_send);
+			else if (shutdown_AB == 1)
+			{
+				socketB.shutdown(tcp::socket::shutdown_send);
+				shutdown_AB = 2;
+			}
 		}
 	}
 

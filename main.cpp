@@ -81,13 +81,13 @@ int main(int argc, char **argv)
 			{
 				// resolve remote
 				{
-					tcp::resolver::query query(tcp::v4(), "localhost", argv[2]);
+					tcp::resolver::query query(tcp::v4(), argv[2], tcp::resolver::query::passive);
 					iterator it = resolver.resolve(query);
 					server->set_remote(*it);
 				}
 				// resolve local
 				{
-					tcp::resolver::query query(tcp::v4(), "localhost", argv[3]);
+					tcp::resolver::query query(tcp::v4(), argv[3], tcp::resolver::query::passive);
 					iterator it = resolver.resolve(query);
 					server->set_local(*it);
 				}

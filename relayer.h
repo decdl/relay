@@ -34,7 +34,7 @@ namespace relay
 
 		private:
 			size_t buffer_size;
-			bool shutdown_AB, shutdown_BA;
+			uint8_t shutdown_AB, shutdown_BA;
 			tcp::socket socketA;
 			tcp::socket socketB;
 			std::queue<std::pair<std::shared_ptr<buffer_t>, size_t>> dataA;
