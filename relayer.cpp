@@ -69,16 +69,13 @@ namespace relay
 		// error checking
 		if (ec)
 		{
-			CLOSE_ALL
 			if (ec == asio::error::eof)
 			{
 				// handle eof
 				select(from_A, shutdown_AB, shutdown_BA) = 1;
 				if (bytes_transferred != 0)
-				{
 					select(from_A, dataA, dataB).push(std::make_pair(buffer, bytes_transferred));
-					check_and_write();
-				}
+				check_and_write();
 				return;
 			}
 			else
@@ -106,13 +103,12 @@ namespace relay
 		// error checking
 		if (ec)
 		{
-			CLOSE_ALL
 			if (ec == asio::error::broken_pipe)
 			{
 				// handle broken pipe
 				if (select(to_A, shutdown_BA, shutdown_AB) != 2)
 				{
-					select(to_A, socketB, socketA).shutdown(tcp::socket::shutdown_receive);
+					select(to_A, socketB, socketA).shutdown(tcp::socket::shutdown_both/*recieve*/);
 					select(to_A, shutdown_BA, shutdown_AB) = 2;
 				}
 				while (select(to_A, dataB, dataA).size() > 0)
@@ -144,7 +140,7 @@ namespace relay
 			}
 			else if (shutdown_BA == 1)
 			{
-				socketA.shutdown(tcp::socket::shutdown_send);
+				socketA.shutdown(tcp::socket::shutdown_both/*send*/);
 				shutdown_BA = 2;
 			}
 		}
@@ -160,10 +156,9 @@ namespace relay
 			}
 			else if (shutdown_AB == 1)
 			{
-				socketB.shutdown(tcp::socket::shutdown_send);
+				socketB.shutdown(tcp::socket::shutdown_both/*send*/);
 				shutdown_AB = 2;
 			}
 		}
 	}
-
 }
