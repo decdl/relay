@@ -23,7 +23,7 @@ namespace relay
 					if (ec)
 					{
 						if (ec != asio::error::operation_aborted)
-						throw boost::system::system_error(ec);
+							throw boost::system::system_error(ec);
 					}
 					else
 						socket.cancel();
@@ -42,6 +42,7 @@ namespace relay
 						timer.cancel();
 				});
 		socket.get_io_service().run();
+		socket.get_io_service().reset();
 		if (timeout)
 			throw boost::system::system_error(asio::error::eof);
 	}
