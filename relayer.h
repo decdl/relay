@@ -20,7 +20,7 @@ namespace relay
 	{
 		public:
 			// constructor
-			relayer(tcp::socket && A, tcp::socket && B, size_t buffer_size = 8192);
+			relayer(tcp::socket && A, tcp::socket && B, size_t buffer_size = 4096);
 			relayer(const relayer &) = delete;
 
 			// copy assignment

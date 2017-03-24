@@ -16,7 +16,7 @@ namespace relay
 	{
 		public:
 			// constructor
-			server(asio::io_service &io_service, size_t size = 8192);
+			server(asio::io_service &io_service, size_t size = 4096);
 			server(const server &) = delete;
 
 			// copy assignment
