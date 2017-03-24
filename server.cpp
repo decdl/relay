@@ -46,20 +46,20 @@ namespace relay
 		{
 			tcp::acceptor acceptor(ios, endpoint_remote);
 			acceptor.accept(socket_remote);
-			try
-			{
-				asio::write(socket_remote, asio::buffer(server_sig, size_server_sig));
-				read_timeout(socket_remote, buffer, size_client_sig);
-				if (std::memcmp(buffer, client_sig, size_client_sig) != 0)
-					throw std::runtime_error("remote client signature verification failed");
-			}
-			catch (const boost::system::system_error &e)
-			{
-				if (e.code() == asio::error::broken_pipe
-						|| e.code() == asio::error::eof)
-					throw std::runtime_error("remote client connection reset");
-				throw;
-			}
+		}
+		try
+		{
+			asio::write(socket_remote, asio::buffer(server_sig, size_server_sig));
+			read_timeout(socket_remote, buffer, size_client_sig);
+			if (std::memcmp(buffer, client_sig, size_client_sig) != 0)
+				throw std::runtime_error("remote client signature verification failed");
+		}
+		catch (const boost::system::system_error &e)
+		{
+			if (e.code() == asio::error::broken_pipe
+					|| e.code() == asio::error::eof)
+				throw std::runtime_error("remote client connection reset");
+			throw;
 		}
 retry:
 		// establish local connection
@@ -75,7 +75,7 @@ retry:
 			read_timeout(socket_remote, buffer, 1, 10000);
 			if (buffer[0] != 0)
 			{
-				socket_local.shutdown(decltype(socket_local)::shutdown_both);
+				socket_local.shutdown(tcp::socket::shutdown_both);
 				socket_local.close();
 				goto retry;
 			}

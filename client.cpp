@@ -5,7 +5,6 @@ namespace relay
 {
 
 	namespace asio = boost::asio;
-	namespace ip = asio::ip;
 	using ip::tcp;
 
 	// constructor

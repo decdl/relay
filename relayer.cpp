@@ -1,14 +1,6 @@
 
 #include "prec.h"
 
-#define CLOSE_ALL { \
-	if (socketA.is_open()) \
-		socketA.close(); \
-	if (socketB.is_open()) \
-		socketB.close(); \
-	return; \
-}
-
 namespace relay
 {
 	namespace asio = boost::asio;
