@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "../relayer.h"
+#include "../../relayer.h"
 
 namespace asio = boost::asio;
 using asio::ip::tcp;
@@ -34,6 +34,11 @@ int main(int argc, char **argv)
 			tcp::acceptor acceptor(ios, end_local);
 			acceptor.accept(socket_local);
 			socket_remote.connect(end_remote);
+		}
+		// send some data
+		{
+			static const char test_data[] = "test data\n";
+			asio::write(socket_remote, asio::buffer(test_data, sizeof(test_data)));
 		}
 		// start relay
 		relay::relayer relay(std::move(socket_remote), std::move(socket_local));
