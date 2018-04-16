@@ -58,6 +58,7 @@ namespace relay
 				throw std::runtime_error("remote server connection reset");
 			throw;
 		}
+		std::cerr << "remote connection established" << std::endl;
 retry:
 		try
 		{
